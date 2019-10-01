@@ -1,6 +1,6 @@
 export default {
-  nodeURI: 'https://nodes.wavesnodes.com',
-  matcherURI: 'https://matcher.wavesplatform.com/matcher',
+  nodeURL: 'https://nodes.wavesnodes.com',
+  matcherURL: 'https://matcher.wavesplatform.com/matcher',
   assets: {
     WAVES: {
       assetId: 'WAVES',
