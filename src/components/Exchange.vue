@@ -1,5 +1,5 @@
 <template>
-  <div>{{msg}}
+  <div>
     <div class="inline">
       <input type="text" v-model="srcValue"/>
       <input type="radio" value="WUSD" v-model="srcAsset"><label>USD</label>
@@ -33,9 +33,6 @@
 <script>
 export default {
   name: 'Exchange',
-  props: {
-    msg: String
-  },
   data: () => ({
     text: '',
     error: false,
@@ -93,7 +90,7 @@ export default {
             })
           }
         }).catch((ex) => {
-          this.errorText = 'Error'
+          this.errorText = 'something went wrong'
           this.error = true
         })
     },

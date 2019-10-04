@@ -1,6 +1,8 @@
 export default {
   nodeURL: 'https://nodes.wavesnodes.com',
   matcherURL: 'https://matcher.wavesplatform.com/matcher',
+  wavesGatewayURL: 'https://gw.wavesplatform.com/api/v1/external',
+  coinomatGatewayURL: 'https://coinomat.com/api/v1',
   assets: {
     WAVES: {
       assetId: 'WAVES',

@@ -144,6 +144,85 @@ export default new Vuex.Store({
             console.log(ex)
           })
       }
+    },
+    deposit ({ state }) {
+      return new Promise((resolve) => {
+        if (state.exSrcAsset === 'WBTC') {
+          axios.get(`${config.coinomatGatewayURL}/create_tunnel.php?currency_from=BTC&currency_to=WBTC&wallet_to=${state.address}`)
+            .then((response) => {
+              axios.get(`${config.coinomatGatewayURL}/get_tunnel.php?xt_id=${response.data.tunnel_id}&k1=${response.data.k1}&k2=${response.data.k2}&history=0&lang=ru_RU`)
+                .then((response) => {
+                  resolve({ success: true, message: response.data.tunnel.wallet_from })
+                }).catch((ex) => {
+                  console.log(ex)
+                  resolve({ success: false, message: 'something went wrong' })
+                })
+            }).catch((ex) => {
+              console.log(ex)
+              resolve({ success: false, message: 'something went wrong' })
+            })
+        } else {
+          const buf = {
+            assetId: config.assets[state.exSrcAsset].assetId,
+            userAddress: state.address
+          }
+          axios.post(`${config.wavesGatewayURL}/deposit`, buf)
+            .then((response) => {
+              resolve({ success: true, message: response.data.address })
+            }).catch((ex) => {
+              console.log(ex)
+              resolve({ success: false, message: 'something went wrong' })
+            })
+        }
+      })
+    },
+    withdraw ({ state }, toAddress) {
+      let transfer = {
+        type: 4,
+        data: {
+          amount: {
+            tokens: state.exValue,
+            assetId: config.assets[state.exSrcAsset].assetId
+          },
+          fee: {
+            tokens: '0.001',
+            assetId: 'WAVES'
+          }
+        }
+      }
+      return new Promise((resolve, reject) => {
+        if (state.exSrcAsset === 'WBTC') {
+          axios.get(`${config.coinomatGatewayURL}/create_tunnel.php?currency_from=WBTC&currency_to=BTC&wallet_to=${toAddress}`)
+            .then((response) => {
+              axios.get(`${config.coinomatGatewayURL}/get_tunnel.php?xt_id=${response.data.tunnel_id}&k1=${response.data.k1}&k2=${response.data.k2}&history=0&lang=ru_RU`)
+                .then((response) => {
+                  transfer.data.recipient = response.data.tunnel.wallet_from
+                  transfer.data.attachment = response.data.tunnel.attachment
+                  resolve({ success: true, tx: transfer })
+                }).catch((ex) => {
+                  console.log(ex)
+                  resolve({ success: false, message: 'something went wrong' })
+                })
+            }).catch((ex) => {
+              console.log(ex)
+              resolve({ success: false, message: 'something went wrong' })
+            })
+        } else {
+          const buf = {
+            assetId: config.assets[state.exSrcAsset].assetId,
+            userAddress: toAddress
+          }
+          axios.post(`${config.wavesGatewayURL}/withdraw`, buf)
+            .then((response) => {
+              transfer.data.recipient = response.data.recipientAddress
+              transfer.data.attachment = response.data.processId
+              resolve({ success: true, tx: transfer })
+            }).catch((ex) => {
+              console.log(ex)
+              resolve({ data: { success: false, message: 'something went wrong' } })
+            })
+        }
+      })
     }
   }
 })
