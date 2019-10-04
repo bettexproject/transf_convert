@@ -1,17 +1,25 @@
 <template>
-  <div>
-    <div class="inline">
-      <input type="text" v-model="srcValue"/>
-      <input type="radio" value="WBTC" v-model="srcAsset"><label>BTC</label>
-      <input type="radio" value="WETH" v-model="srcAsset"><label>ETH</label>
+  <div class="exchange">
+    <div class="exchange-title">
+      Withdraw
     </div>
     <div class="inline">
-      Address: <input type="text" v-model="toAddress"/>
+      <div class="input-group-place" :class="isAmountValid ? 'valid' : 'invalid'">
+        <label for="srcValue">Amount {{srcAsset}} </label>
+        <input type="text" id="srcValue" v-model="srcValue"/>
+      </div>
+      <div class="asset-list">
+        <input type="radio" value="WBTC" v-model="srcAsset"><label>BTC</label>
+        <input type="radio" value="WETH" v-model="srcAsset"><label>ETH</label></div>
     </div>
     <div class="inline">
-        <div class="green--text">{{wallet}}</div>
+      <div class="input-group-place" :class="isAmountValid ? 'valid' : 'invalid'">
+        <label for="amount">Your {{srcAsset}} address </label>
+        <input type="text" id="amount" v-model="toAddress"/>
+      </div>
     </div>
     <div class="inline">
+      <div class="green--text">{{wallet}}</div>
     </div>
     <div class="inline">
       <div v-if="error" class="red--text">{{errorText}}</div>
@@ -22,84 +30,85 @@
 </template>
 
 <script>
-export default {
-  name: 'Withdraw',
-  data: () => ({
-    error: false,
-    errorText: '',
-    wallet: '',
-    toAddress: ''
-  }),
-  computed: {
-    srcAsset: {
-      get () {
-        return this.$store.getters.ExchangeSrcAsset
+  export default {
+    name: 'Withdraw',
+    data: () => ({
+      error: false,
+      errorText: '',
+      wallet: '',
+      toAddress: ''
+    }),
+    computed: {
+      srcAsset: {
+        get() {
+          return this.$store.getters.ExchangeSrcAsset
+        },
+        set(value) {
+          this.$store.commit('setSrcAsset', (value))
+        }
       },
-      set (value) {
-        this.$store.commit('setSrcAsset', (value))
+      srcValue: {
+        get() {
+          return this.$store.getters.ExchangeValue
+        },
+        set(value) {
+          this.$store.commit('setExValue', value)
+        }
       }
     },
-    srcValue: {
-      get () {
-        return this.$store.getters.ExchangeValue
-      },
-      set (value) {
-        this.$store.commit('setExValue', value)
-      }
-    }
-  },
-  mounted () {
-    // api.calculateChangerSum('4LHHvYGNKJUg5hj65aGD5vgScvCBmLpdRFtjokvCjSL8', 'WAVES')
-  },
-  methods: {
-    buttonClick: function () {
-      this.checkData()
+    mounted() {
+      // api.calculateChangerSum('4LHHvYGNKJUg5hj65aGD5vgScvCBmLpdRFtjokvCjSL8', 'WAVES')
     },
-    checkData: function () {
-      this.$store.dispatch('checkBalance')
-        .then((success) => {
-          if (!success) {
-            this.errorText = 'insufficient funds'
-            this.error = true
-          } else {
-            this.$store.dispatch('withdraw', this.toAddress)
-              .then((res) => {
-                if (res.success) {
-                  console.log(res.tx)
-                  if (window.WavesKeeper.publicState()) {
-                    window.WavesKeeper.signAndPublishTransaction(res.tx)
-                    .then((result) => {
-                      console.log(result)
-                    }).catch((ex) => {
-                      console.log(ex)
+    methods: {
+      buttonClick: function () {
+        this.checkData()
+      },
+      checkData: function () {
+        this.$store.dispatch('checkBalance')
+            .then((success) => {
+              if (!success) {
+                this.errorText = 'insufficient funds'
+                this.error = true
+              } else {
+                this.$store.dispatch('withdraw', this.toAddress)
+                    .then((res) => {
+                      if (res.success) {
+                        console.log(res.tx)
+                        if (window.WavesKeeper.publicState()) {
+                          window.WavesKeeper.signAndPublishTransaction(res.tx)
+                              .then((result) => {
+                                console.log(result)
+                              }).catch((ex) => {
+                            console.log(ex)
+                          })
+                        }
+                      } else {
+                        this.error = true
+                        this.errorText = res.message
+                      }
                     })
-                  }
-                } else {
-                  this.error = true
-                  this.errorText = res.message
-                }
-              })
-          }
-        }).catch((ex) => {
+              }
+            }).catch((ex) => {
           this.errorText = 'something went wrong'
           this.error = true
         })
+      }
     }
   }
-}
 </script>
 
 <style>
-.inline {
-  min-height: 20px;
-  margin-top: 10px;
-  border: solid black 1px;
-}
+  .inline {
+    min-height: 20px;
+    margin-top: 10px;
+    /*border: solid black 1px;*/
+  }
 
-.red--text {
-  color: red;
-}
-.green--text {
-  color: green;
-}
+  .red--text {
+    color: red;
+  }
+
+  .green--text {
+    color: green;
+  }
 </style>
