@@ -37,7 +37,7 @@
     <div class="inline">
       <div class="exchange-text">Convert into</div>
       <div class="exchange-out">{{sum}} {{dstAsset}}
-        <div class="exchange-currency">1 {{srcAsset}} ≈ 3 {{dstAsset}}</div>
+        <div class="exchange-currency">1 {{srcAsset}} ≈ {{rate}} {{dstAsset}}</div>
       </div>
 
     </div>
@@ -57,7 +57,9 @@ export default {
     error: false,
     errorText: '',
     sum: 0,
-    isAmountValid: true
+    isAmountValid: true,
+    timeout: 0,
+    rate: 0
   }),
   computed: {
     srcAsset: {
@@ -66,6 +68,7 @@ export default {
       },
       set(value) {
         this.$store.commit('setSrcAsset', (value))
+        this.checkDataTimer()
       }
     },
     dstAsset: {
@@ -74,6 +77,7 @@ export default {
       },
       set(value) {
         this.$store.commit('setDstAsset', (value))
+        this.checkDataTimer()
       }
     },
     srcValue: {
@@ -82,15 +86,17 @@ export default {
       },
       set(value) {
         this.$store.commit('setExValue', value)
+        this.checkDataTimer()
       }
     }
   },
   mounted() {
-    // api.calculateChangerSum('4LHHvYGNKJUg5hj65aGD5vgScvCBmLpdRFtjokvCjSL8', 'WAVES')
+    
   },
   methods: {
-    buttonClick: function () {
-      this.checkData()
+    checkDataTimer: function () {
+      clearTimeout(this.timeout)
+      this.timeout = setTimeout(this.checkData, 3000)
     },
     checkData: function () {
       this.$store.dispatch('checkBalance')
@@ -98,10 +104,12 @@ export default {
           if (!success) {
             this.errorText = 'insufficient funds'
             this.error = true
+            this.isAmountValid = false
           } else {
             this.$store.dispatch('calculateExData').then((res) => {
               if (res.success) {
                 this.sum = res.summary
+                this.rate = res.summary / this.srcValue
                 this.error = false
               } else {
                 this.errorText = 'something went wrong'

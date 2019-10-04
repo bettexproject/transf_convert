@@ -73,6 +73,7 @@
       checkData: function () {
         this.$store.dispatch('checkBalance')
             .then((success) => {
+              this.isAmountValid = success
               if (!success) {
                 this.errorText = 'insufficient funds'
                 this.error = true

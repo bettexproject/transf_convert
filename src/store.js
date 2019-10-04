@@ -7,11 +7,11 @@ Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
-    address: '3P4pKfj9UZHqj6pb18921oSftYuQw35gExR',
+    address: '',
     exSrcAsset: 'WETH',
     exDstAsset: 'WAVES',
     exOrderType: 'sell',
-    exValue: 1000000,
+    exValue: 0,
     exPrice: -1,
     exSum: 0
   },
@@ -23,7 +23,7 @@ export default new Vuex.Store({
       state.exDstAsset = payload
     },
     setExValue (state, payload) {
-      state.exValue = payload// * Math.pow(10, config.assets[state.exSrcAsset].decimals)
+      state.exValue = payload
     },
     setExOrderType (state, payload) {
       state.exOrderType = payload
@@ -37,10 +37,9 @@ export default new Vuex.Store({
     setAddress: (state, payload) => { state.address = payload }
   },
   getters: {
-    // ExchangeSrcAssetId: state => config.assets[state.exSrcAsset].assetId,
     ExchangeSrcAsset: state => state.exSrcAsset,
     ExchangeDstAsset: state => state.exDstAsset,
-    ExchangeValue: state => state.exValue, // / Math.pow(10, config.assets[state.exSrcAsset].decimals),
+    ExchangeValue: state => state.exValue,
     ExchangeSum: state => state.exSum,
     ExchangePrice: state => state.ExchangePrice,
     Address: state => state.address
