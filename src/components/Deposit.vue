@@ -49,7 +49,7 @@ export default {
         .then((response) => {
           axios.get(`${config.coinomatGatewayURL}/get_tunnel.php?xt_id=${response.data.tunnel_id}&k1=${response.data.k1}&k2=${response.data.k2}&history=0&lang=ru_RU`)
             .then((response) => {
-              this.wbtcAddress = response.data.tunnel.wallet_from
+              this.wbtcAddress = response.data && response.data.tunnel ? response.data.tunnel.wallet_from : ''
             }).catch((ex) => {
               console.log(ex)
             })
@@ -63,7 +63,7 @@ export default {
       }
       axios.post(`${config.wavesGatewayURL}/deposit`, buf)
         .then((response) => {
-          this.wethAddress = response.data.address
+          this.wethAddress = response.data && response.data.address ? response.data.address : ''
         }).catch((ex) => {
           console.log(ex)
         })

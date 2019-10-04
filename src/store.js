@@ -50,10 +50,13 @@ export default new Vuex.Store({
         const url = `${config.matcherURL}/orderbook/${config.assets[state.exSrcAsset].assetId}/${config.assets[state.exDstAsset].assetId}/tradableBalance/${state.address}`
         axios.get(url)
           .then((response) => {
-            console.log(response)
-            const balance = response.data[config.assets[state.exSrcAsset].assetId]
-            const buf = balance >= (state.exValue * Math.pow(10, config.assets[state.exSrcAsset].decimals))
-            resolve(buf)
+            if (response.data) {
+              const balance = response.data[config.assets[state.exSrcAsset].assetId]
+              const buf = balance >= (state.exValue * Math.pow(10, config.assets[state.exSrcAsset].decimals))
+              resolve(buf)
+            } else {
+              reject(new Error())
+            }
           }).catch((ex) => {
             reject(new Error('Error'))
           })
@@ -64,6 +67,9 @@ export default new Vuex.Store({
         axios.get(`${config.matcherURL}/orderbook/${config.assets[state.exSrcAsset].assetId}/${config.assets[state.exDstAsset].assetId}`)
           .then((response) => {
             const data = response.data
+            if (!data.pair) {
+              resolve({ success: false, summary: 0 })
+            }
             let price = 0
             let u = 0
             if (data.pair.priceAsset === config.assets[state.exDstAsset].assetId) {
@@ -83,6 +89,8 @@ export default new Vuex.Store({
                 }
               }
               commit('setExPrice', price)
+              commit('setExOrderType', 'sell')
+              commit('setExSum', state.exValue)
               resolve({ success: true, summary: u / Math.pow(10, config.assets[state.exSrcAsset].decimals + config.assets[state.exDstAsset].decimals) })
             } else {
               const asks = data.asks
@@ -102,7 +110,8 @@ export default new Vuex.Store({
               }
               commit('setExPrice', price)
               commit('setExOrderType', 'buy')
-              resolve({ success: true, summary: u / Math.pow(10, config.assets[state.exDstAsset].decimals) })
+              commit('setExSum', u / Math.pow(10, config.assets[state.exDstAsset].decimals))
+              resolve({ success: true, summary: state.exSum })
             }
           }).catch((ex) => {
             resolve({ success: false, summary: 0 })
@@ -113,7 +122,6 @@ export default new Vuex.Store({
       const time = Date.now()
       const amountAssetId = state.exOrderType === 'sell' ? config.assets[state.exSrcAsset].assetId : config.assets[state.exDstAsset].assetId
       const priceAssetId = state.exOrderType === 'sell' ? config.assets[state.exDstAsset].assetId : config.assets[state.exSrcAsset].assetId
-      const decimals = state.exOrderType === 'sell' ? config.assets[state.exDstAsset].decimals : config.assets[state.exSrcAsset].decimals
       const order = {
         type: 1002,
         data: {
@@ -122,7 +130,7 @@ export default new Vuex.Store({
           expiration: time + 1000000,
           version: 1,
           amount: {
-            coins: state.exValue * Math.pow(10, decimals),
+            tokens: state.exSum,
             assetId: amountAssetId
           },
           price: {
