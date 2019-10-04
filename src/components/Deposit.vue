@@ -6,15 +6,15 @@
     <div class="inline">
       <div class="exchange-text">Send coins on this addresses</div>
       <div class="input-group">
-        <div class="input-group-place" :class="isAmountValid ? 'valid' : 'invalid'">
+        <div class="input-group-place valid">
           <label for="amount">Address for deposit BTC</label>
-          <input type="text" id="amount" v-model="wallet"/>
+          <input type="text" @click="copyToClipboard(wbtcAddress)" id="amount" v-model="wbtcAddress"/>
         </div>
       </div>
       <div class="input-group">
-        <div class="input-group-place" :class="isAmountValid ? 'valid' : 'invalid'">
+        <div class="input-group-place valid">
           <label for="amount4">Address for deposit ETH</label>
-          <input type="text" id="amount4" v-model="wallet"/>
+          <input type="text" @click="copyToClipboard(wethAddress)" id="amount4" v-model="wethAddress"/>
         </div>
       </div>
     </div>
@@ -30,37 +30,49 @@
 </template>
 
 <script>
-  export default {
-    name: 'Deposit',
-    data: () => ({
-      error: false,
-      errorText: '',
-      wallet: '123456789'
-    }),
-    computed: {
-      srcAsset: {
-        get() {
-          return this.$store.getters.ExchangeSrcAsset
-        },
-        set(value) {
-          this.$store.commit('setSrcAsset', (value))
-        }
-      }
-    },
-    methods: {
-      buttonClick: function () {
-        this.$store.dispatch('deposit')
-            .then((res) => {
-              if (res.success) {
-                this.wallet = res.message
-              } else {
-                this.error = true
-                this.errorText = res.message
-              }
+import axios from 'axios'
+import config from '../config.js'
+export default {
+  name: 'Deposit',
+  data: () => ({
+    error: false,
+    errorText: '',
+    wethAddress: '',
+    wbtcAddress: ''
+  }),
+  computed: {
+    
+  },
+  methods: {
+    buttonClick: function () {
+      axios.get(`${config.coinomatGatewayURL}/create_tunnel.php?currency_from=BTC&currency_to=WBTC&wallet_to=${this.$store.getters.Address}`)
+        .then((response) => {
+          axios.get(`${config.coinomatGatewayURL}/get_tunnel.php?xt_id=${response.data.tunnel_id}&k1=${response.data.k1}&k2=${response.data.k2}&history=0&lang=ru_RU`)
+            .then((response) => {
+              this.wbtcAddress = response.data.tunnel.wallet_from
+            }).catch((ex) => {
+              console.log(ex)
             })
+        }).catch((ex) => {
+          console.log(ex)
+        })
+
+      const buf = {
+        assetId: config.assets.WETH.assetId,
+        userAddress: this.$store.getters.Address
       }
+      axios.post(`${config.wavesGatewayURL}/deposit`, buf)
+        .then((response) => {
+          this.wethAddress = response.data.address
+        }).catch((ex) => {
+          console.log(ex)
+        })
+    },
+    copyToClipboard: function (text) {
+      navigator.clipboard.writeText(text);
     }
   }
+}
 </script>
 
 <style>

@@ -9,8 +9,9 @@
         <input type="text" id="srcValue" v-model="srcValue"/>
       </div>
       <div class="asset-list">
-        <input type="radio" value="WBTC" v-model="srcAsset"><label>BTC</label>
-        <input type="radio" value="WETH" v-model="srcAsset"><label>ETH</label></div>
+        <input type="radio" id="fWBTC" value="WBTC" v-model="srcAsset"><label for="fWBTC">BTC</label>
+        <input type="radio" id="fWETH" value="WETH" v-model="srcAsset"><label for="fWETH">ETH</label>
+      </div>
     </div>
     <div class="inline">
       <div class="input-group-place" :class="isAmountValid ? 'valid' : 'invalid'">
@@ -36,7 +37,8 @@
       error: false,
       errorText: '',
       wallet: '',
-      toAddress: ''
+      toAddress: '',
+      isAmountValid: true
     }),
     computed: {
       srcAsset: {
@@ -61,6 +63,11 @@
     },
     methods: {
       buttonClick: function () {
+        if (this.toAddress.length === 0){
+          this.errorText = 'invalid address'
+          this.error = true
+          return
+        }
         this.checkData()
       },
       checkData: function () {
@@ -83,8 +90,8 @@
                           })
                         }
                       } else {
-                        this.error = true
                         this.errorText = res.message
+                        this.error = true
                       }
                     })
               }

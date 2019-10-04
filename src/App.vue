@@ -1,5 +1,6 @@
 <template>
   <div id="app">
+    <button @click="updateAddress">click for init address</button>
     <Exchange/>
     <Withdraw/>
     <Deposit/>
@@ -7,18 +8,26 @@
 </template>
 
 <script>
-  import Exchange from './components/Exchange.vue'
-  import Withdraw from './components/Withdraw.vue'
-  import Deposit from './components/Deposit.vue'
+import Exchange from './components/Exchange.vue'
+import Withdraw from './components/Withdraw.vue'
+import Deposit from './components/Deposit.vue'
 
-  export default {
-    name: 'app',
-    components: {
-      Exchange,
-      Withdraw,
-      Deposit
+export default {
+  name: 'app',
+  components: {
+    Exchange,
+    Withdraw,
+    Deposit
+  },
+  methods: {
+    updateAddress:  function() {
+      window.WavesKeeper.publicState()
+      .then((res) => {
+        this.$store.commit('setAddress', res.account.address)
+      })
     }
   }
+}
 </script>
 
 <style>

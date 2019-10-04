@@ -16,9 +16,6 @@ export default new Vuex.Store({
     exSum: 0
   },
   mutations: {
-    setExState (state, { key, value }) {
-      state[key] = value
-    },
     setSrcAsset (state, payload) {
       state.exSrcAsset = payload
     },
@@ -36,7 +33,8 @@ export default new Vuex.Store({
     },
     setExSum (state, payload) {
       state.exSum = payload
-    }
+    },
+    setAddress: (state, payload) => { state.address = payload }
   },
   getters: {
     // ExchangeSrcAssetId: state => config.assets[state.exSrcAsset].assetId,
@@ -44,7 +42,8 @@ export default new Vuex.Store({
     ExchangeDstAsset: state => state.exDstAsset,
     ExchangeValue: state => state.exValue, // / Math.pow(10, config.assets[state.exSrcAsset].decimals),
     ExchangeSum: state => state.exSum,
-    ExchangePrice: state => state.ExchangePrice
+    ExchangePrice: state => state.ExchangePrice,
+    Address: state => state.address
   },
   actions: {
     checkBalance ({ state }) {
@@ -52,6 +51,7 @@ export default new Vuex.Store({
         const url = `${config.matcherURL}/orderbook/${config.assets[state.exSrcAsset].assetId}/${config.assets[state.exDstAsset].assetId}/tradableBalance/${state.address}`
         axios.get(url)
           .then((response) => {
+            console.log(response)
             const balance = response.data[config.assets[state.exSrcAsset].assetId]
             const buf = balance >= (state.exValue * Math.pow(10, config.assets[state.exSrcAsset].decimals))
             resolve(buf)
@@ -190,7 +190,7 @@ export default new Vuex.Store({
           }
         }
       }
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         if (state.exSrcAsset === 'WBTC') {
           axios.get(`${config.coinomatGatewayURL}/create_tunnel.php?currency_from=WBTC&currency_to=BTC&wallet_to=${toAddress}`)
             .then((response) => {
@@ -219,7 +219,7 @@ export default new Vuex.Store({
               resolve({ success: true, tx: transfer })
             }).catch((ex) => {
               console.log(ex)
-              resolve({ data: { success: false, message: 'something went wrong' } })
+              resolve({ success: false, message: 'something went wrong' })
             })
         }
       })

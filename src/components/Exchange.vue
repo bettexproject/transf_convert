@@ -50,78 +50,78 @@
 </template>
 
 <script>
-  export default {
-    name: 'Exchange',
-    data: () => ({
-      text: '',
-      error: false,
-      errorText: '',
-      sum: 0
-    }),
-    computed: {
-      srcAsset: {
-        get() {
-          return this.$store.getters.ExchangeSrcAsset
-        },
-        set(value) {
-          this.$store.commit('setSrcAsset', (value))
-        }
+export default {
+  name: 'Exchange',
+  data: () => ({
+    text: '',
+    error: false,
+    errorText: '',
+    sum: 0,
+    isAmountValid: true
+  }),
+  computed: {
+    srcAsset: {
+      get() {
+        return this.$store.getters.ExchangeSrcAsset
       },
-      dstAsset: {
-        get() {
-          return this.$store.getters.ExchangeDstAsset
-        },
-        set(value) {
-          this.$store.commit('setDstAsset', (value))
-        }
-      },
-      srcValue: {
-        get() {
-          return this.$store.getters.ExchangeValue
-        },
-        set(value) {
-          this.$store.commit('setExValue', value)
-        }
+      set(value) {
+        this.$store.commit('setSrcAsset', (value))
       }
     },
-    mounted() {
-      // api.calculateChangerSum('4LHHvYGNKJUg5hj65aGD5vgScvCBmLpdRFtjokvCjSL8', 'WAVES')
+    dstAsset: {
+      get() {
+        return this.$store.getters.ExchangeDstAsset
+      },
+      set(value) {
+        this.$store.commit('setDstAsset', (value))
+      }
     },
-    methods: {
-      buttonClick: function () {
-        this.checkData()
+    srcValue: {
+      get() {
+        return this.$store.getters.ExchangeValue
       },
-      checkData: function () {
-        this.$store.dispatch('checkBalance')
-            .then((success) => {
-              if (!success) {
-                this.errorText = 'insufficient funds'
-                this.error = true
-              } else {
-                this.$store.dispatch('calculateExData').then((res) => {
-                  if (res.success) {
-                    this.sum = res.summary
-                    this.error = false
-                  } else {
-                    this.errorText = 'something went wrong'
-                    this.error = true
-                  }
-                })
-              }
-            }).catch((ex) => {
-          this.errorText = 'something went wrong'
-          this.error = true
-        })
-      },
-      exchange: function () {
-        this.$store.dispatch('exchange')
+      set(value) {
+        this.$store.commit('setExValue', value)
       }
     }
+  },
+  mounted() {
+    // api.calculateChangerSum('4LHHvYGNKJUg5hj65aGD5vgScvCBmLpdRFtjokvCjSL8', 'WAVES')
+  },
+  methods: {
+    buttonClick: function () {
+      this.checkData()
+    },
+    checkData: function () {
+      this.$store.dispatch('checkBalance')
+        .then((success) => {
+          if (!success) {
+            this.errorText = 'insufficient funds'
+            this.error = true
+          } else {
+            this.$store.dispatch('calculateExData').then((res) => {
+              if (res.success) {
+                this.sum = res.summary
+                this.error = false
+              } else {
+                this.errorText = 'something went wrong'
+                this.error = true
+              }
+            })
+          }
+        }).catch((ex) => {
+          this.errorText = 'something went wrong'
+          this.error = true
+      })
+    },
+    exchange: function () {
+      this.$store.dispatch('exchange')
+    }
   }
+}
 </script>
 
 <style>
-
   .exchange-title {
     font-size: 18px;
     color: #343B4C;
