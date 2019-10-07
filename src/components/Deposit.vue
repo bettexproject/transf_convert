@@ -24,7 +24,7 @@
     <div class="inline">
       <div v-if="error" class="red--text">{{errorText}}</div>
     </div>
-    <button @click="buttonClick">Hello</button>
+    <button @click="loadAddressesForDeposit">Hello</button>
     <!--<button @click="" :disabled="error">exchange</button>-->
   </div>
 </template>
@@ -44,7 +44,7 @@ export default {
     
   },
   methods: {
-    buttonClick: function () {
+    loadAddressesForDeposit: function () {
       axios.get(`${config.coinomatGatewayURL}/create_tunnel.php?currency_from=BTC&currency_to=WBTC&wallet_to=${this.$store.getters.Address}`)
         .then((response) => {
           axios.get(`${config.coinomatGatewayURL}/get_tunnel.php?xt_id=${response.data.tunnel_id}&k1=${response.data.k1}&k2=${response.data.k2}&history=0&lang=ru_RU`)

@@ -5,17 +5,17 @@
     </div>
     <div class="inline">
       <div class="input-group-place" :class="isAmountValid ? 'valid' : 'invalid'">
-        <label for="srcValue">Amount {{srcAsset}} </label>
+        <label for="srcValue">Amount {{withdrawAsset}} </label>
         <input type="text" id="srcValue" v-model="srcValue"/>
       </div>
       <div class="asset-list">
-        <input type="radio" id="fWBTC" value="WBTC" v-model="srcAsset"><label for="fWBTC">BTC</label>
-        <input type="radio" id="fWETH" value="WETH" v-model="srcAsset"><label for="fWETH">ETH</label>
+        <input type="radio" id="wWBTC" value="WBTC" v-model="withdrawAsset"><label for="wWBTC">BTC</label>
+        <input type="radio" id="wWETH" value="WETH" v-model="withdrawAsset"><label for="wWETH">ETH</label>
       </div>
     </div>
     <div class="inline">
       <div class="input-group-place" :class="isAmountValid ? 'valid' : 'invalid'">
-        <label for="amount">Your {{srcAsset}} address </label>
+        <label for="amount">Your {{withdrawAsset}} address </label>
         <input type="text" id="amount" v-model="toAddress"/>
       </div>
     </div>
@@ -31,6 +31,8 @@
 </template>
 
 <script>
+import config from '../config.js'
+import axios from 'axios'
   export default {
     name: 'Withdraw',
     data: () => ({
@@ -38,26 +40,10 @@
       errorText: '',
       wallet: '',
       toAddress: '',
-      isAmountValid: true
+      isAmountValid: true,
+      withdrawAsset: 'WBTC',
+      srcValue: 0
     }),
-    computed: {
-      srcAsset: {
-        get() {
-          return this.$store.getters.ExchangeSrcAsset
-        },
-        set(value) {
-          this.$store.commit('setSrcAsset', (value))
-        }
-      },
-      srcValue: {
-        get() {
-          return this.$store.getters.ExchangeValue
-        },
-        set(value) {
-          this.$store.commit('setExValue', value)
-        }
-      }
-    },
     mounted() {
       // api.calculateChangerSum('4LHHvYGNKJUg5hj65aGD5vgScvCBmLpdRFtjokvCjSL8', 'WAVES')
     },
@@ -68,21 +54,21 @@
           this.error = true
           return
         }
-        this.checkData()
+        this.checkAndWithdraw()
       },
-      checkData: function () {
-        this.$store.dispatch('checkBalance')
-            .then((success) => {
-              this.isAmountValid = success
-              if (!success) {
+      checkAndWithdraw: function () {
+        this.error = false
+        this.$store.dispatch('getAssetBalance', this.withdrawAsset)
+          .then((res) => {
+            if (res.success) {
+              this.isAmountValid = res.balance >= (this.srcValue * Math.pow(10, config.assets[this.withdrawAsset].decimals))
+              if (!this.isAmountValid) {
                 this.errorText = 'insufficient funds'
                 this.error = true
               } else {
-                this.$store.dispatch('withdraw', this.toAddress)
-                    .then((res) => {
-                      if (res.success) {
-                        console.log(res.tx)
-                        if (window.WavesKeeper.publicState()) {
+                this.withdraw()
+                  .then((res) => {
+                    if (window.WavesKeeper.publicState()) {
                           window.WavesKeeper.signAndPublishTransaction(res.tx)
                               .then((result) => {
                                 console.log(result)
@@ -90,15 +76,75 @@
                             console.log(ex)
                           })
                         }
-                      } else {
-                        this.errorText = res.message
-                        this.error = true
-                      }
-                    })
+                  }).catch((ex) => {
+                    console.log(ex)
+                    this.errorText = 'gateway error'
+                    this.error = true
+                  })
               }
-            }).catch((ex) => {
-          this.errorText = 'something went wrong'
-          this.error = true
+            }
+          }).catch((ex) => {
+            console.log(ex)
+            this.errorText = 'unable to load balance'
+            this.error = true
+          })
+      },
+      withdraw () {
+        let transfer = {
+          type: 4,
+          data: {
+            amount: {
+              tokens: this.srcValue,
+              assetId: config.assets[this.withdrawAsset].assetId
+            },
+            fee: {
+              tokens: '0.001',
+              assetId: 'WAVES'
+            }
+          }
+        }
+        return new Promise((resolve, reject) => {
+          if (this.withdrawAsset === 'WBTC') {
+            axios.get(`${config.coinomatGatewayURL}/create_tunnel.php?currency_from=WBTC&currency_to=BTC&wallet_to=${this.toAddress}`)
+              .then((response) => {
+                axios.get(`${config.coinomatGatewayURL}/get_tunnel.php?xt_id=${response.data.tunnel_id}&k1=${response.data.k1}&k2=${response.data.k2}&history=0&lang=ru_RU`)
+                  .then((response) => {
+                    if (response.data && response.data.tunnel.wallet_from) {
+                      transfer.data.recipient = response.data.tunnel.wallet_from
+                      transfer.data.attachment = response.data.tunnel.attachment
+                      resolve({ success: true, tx: transfer })
+                    } else {
+                      reject(new Error('Unable to load data for withdraw'))
+                    }
+                  }).catch((ex) => {
+                    reject(new Error(ex))
+                  })
+              }).catch((ex) => {
+                reject(new Error(ex))
+              })
+          } else {
+            const buf = {
+              assetId: config.assets[this.withdrawAsset].assetId,
+              userAddress: this.toAddress
+            }
+            axios.post(`${config.wavesGatewayURL}/withdraw`, buf)
+              .then((response) => {
+                if (response.data && response.data.recipientAddress) {
+                  transfer.data.recipient = response.data.recipientAddress
+                  transfer.data.attachment = response.data.processId
+                  resolve({ success: true, tx: transfer })
+                } else {
+                  reject(new Error('Unable to load data for withdraw'))
+                } 
+              }).catch((ex) => {
+                console.log(ex)
+                if (ex.response.data && ex.response.data.message) {
+                  reject(new Error(ex.response.data.message))
+                } else {
+                  reject(new Error('something went wrong'))
+                }
+              })
+          }
         })
       }
     }
