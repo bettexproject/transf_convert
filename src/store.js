@@ -64,23 +64,6 @@ export default new Vuex.Store({
           })
       })
     },
-    checkBalance ({ state }) {
-      return new Promise((resolve, reject) => {
-        const url = `${config.matcherURL}/orderbook/${config.assets[state.exSrcAsset].assetId}/${config.assets[state.exDstAsset].assetId}/tradableBalance/${state.address}`
-        axios.get(url)
-          .then((response) => {
-            if (response.data) {
-              const balance = response.data[config.assets[state.exSrcAsset].assetId]
-              const buf = balance >= (state.exValue * Math.pow(10, config.assets[state.exSrcAsset].decimals))
-              resolve(buf)
-            } else {
-              reject(new Error())
-            }
-          }).catch((ex) => {
-            reject(new Error('Error'))
-          })
-      })
-    },
     calculateExData ({ state, commit }) {
       return new Promise((resolve) => {
         axios.get(`${config.matcherURL}/orderbook/${config.assets[state.exSrcAsset].assetId}/${config.assets[state.exDstAsset].assetId}`)

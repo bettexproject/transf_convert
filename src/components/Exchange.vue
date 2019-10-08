@@ -50,6 +50,7 @@
 </template>
 
 <script>
+import config from '../config.js'
 export default {
   name: 'Exchange',
   data: () => ({
@@ -99,25 +100,29 @@ export default {
       this.timeout = setTimeout(this.checkData, 3000)
     },
     checkData: function () {
-      this.$store.dispatch('checkBalance')
-        .then((success) => {
-          if (!success) {
-            this.errorText = 'insufficient funds'
-            this.error = true
-            this.isAmountValid = false
-          } else {
-            this.$store.dispatch('calculateExData').then((res) => {
-              if (res.success) {
-                this.sum = res.summary
-                this.rate = res.summary / this.srcValue
-                this.error = false
-              } else {
-                this.errorText = 'something went wrong'
-                this.error = true
-              }
-            })
+      this.error = false
+      this.$store.dispatch('getAssetBalance')
+        .then((res) => {
+          if (res.success) {
+            this.isAmountValid = res.balance >= (this.srcValue * Math.pow(10, config.assets[this.srcAsset].decimals))
+            if (!this.isAmountValid) {
+              this.errorText = 'insufficient funds'
+              this.error = true
+            } else {
+              this.$store.dispatch('calculateExData').then((res) => {
+                if (res.success) {
+                  this.sum = res.summary
+                  this.rate = res.summary / this.srcValue
+                  this.error = false
+                } else {
+                  this.errorText = 'something went wrong'
+                  this.error = true
+                }
+              })
+            }
           }
         }).catch((ex) => {
+          console.log(ex)
           this.errorText = 'something went wrong'
           this.error = true
       })
